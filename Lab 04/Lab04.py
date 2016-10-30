@@ -1,53 +1,83 @@
-#
-# Alexander Keller <alexander.keller@uoit.ca>
-# Mohammed Savari <mohammed.savari@uoit.net>
-#
-
 import time
+import itertools
 
-# Start the clock
 start = time.time()
 
 print('------------------------------------------------------------------------')
 print('Running...')
 #-------------------------------------------------------------------------------
 
-myFile = open("movies.dat")
+myFile = open('movies.dat')
 
-myTable = {}
-tHold = 0.03
+tHold = 0.1
+itemSet = 2
+
+table = []
+candidSet= {}
+freqSet = {}
+totalSet = {}
+
 lines = myFile.readlines()
-
+myFile.close()
 
 for line in lines:
-    for item1 in line.split():
-        for item2 in line.split():
-            for item3 in line.split():
-                if item1 < item2 < item3:
-                    if item1 + ", " + item2 + ", " + item3 not in myTable:
-                        myTable[item1 + ", " + item2 + ", " + item3] = 1
-                    else:
-                        myTable[item1 + ", " + item2 + ", " + item3] += 1
+   for item in line.split():
+       if item not in candidSet:
+           candidSet[item]=1
+       else:
+           candidSet[item]+=1
+           
+for item in candidSet:
+   if candidSet[item] > (len(lines) * tHold):
+       totalSet[item] = candidSet[item]
+       freqSet[item] = candidSet[item]
+       
+for item in freqSet:
+   for i in item.split(','):
+       if i not in table:
+           table.append(i)
+           
+while len(table) > itemSet:
+   freqSet = {}
+   candidSet = {}
+   for sub in itertools.combinations(table, itemSet):
+       candidSet[','.join(sub)] = 0
+       
+   for line in lines:
+       for sub in itertools.combinations(line.split(), itemSet):
+           for item in candidSet:
+               if set(sub) == set(item.split(',')):
+                   candidSet[item] +=1
+                   
+   for item in candidSet:
+       if candidSet[item] > (len(lines) * tHold):
+           totalSet[item] = candidSet[item]
+           freqSet[item] = candidSet[item]
+           
+   table = []
+   for item in freqSet:
+       for i in item.split(','):
+           if i not in table:
+               table.append(i)         
+   itemSet +=1
+
 ordered = []
 
-for pair in myTable:
-    if myTable[pair] > (len(lines) * tHold):
-        ordered.append([myTable[pair], pair])
+for pair in totalSet:
+    if totalSet[pair] > (len(lines) * tHold):
+        ordered.append([totalSet[pair], pair])
 
 ordered.sort(reverse=True)
 
 total = 0
 for i in ordered:
     total+=1
-    print(total, ')', i[1], i[0])
-
-
-#scan all items put in table1
-#delete any items that does not meet threshold
+    print(total, ')', i[1], ':', i[0])
 
 #-------------------------------------------------------------------------------
 print('Done!')
 
-# Stop the clock
 end = time.time()
 print('Time taken in seconds:', end - start)
+
+print(total, "results found!")
